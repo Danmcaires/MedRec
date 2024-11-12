@@ -1,0 +1,275 @@
+patient_records_app/
+    - main.py             # Main application entry point
+    - gui/                # GUI-related modules
+        - login_window.py   # Login page
+        - patient_list.py   # Patient list page
+        - patient_view.py   # View patient details
+        - patient_edit.py   # Edit patient information
+        - patient_add.py    # Add new patient
+    - data_manager.py     # Handles encryption, file I/O
+    - patient.py          # Patient class definition
+    - utils.py            # Utility functions (if needed)
+    - patient_data/       # Directory to store encrypted patient files 
+
+Explanation:
+
+main.py:
+    Initializes the application.
+    Handles login logic.
+    Opens the appropriate window based on user authentication.
+gui/:
+    Contains modules for each GUI window/page.
+    Each module defines the layout and functionality of the corresponding window.
+    Uses either Tkinter or PyQt for GUI elements.
+login_window.py:
+    GUI for the login page.
+    Handles user input (admin/doctor login).
+    Verifies credentials against stored, securely hashed passwords.
+patient_list.py:
+    Displays the list of patients.
+    Implements search/filter functionality.
+    Allows navigation to patient_view.py or patient_edit.py.
+patient_view.py, patient_edit.py, patient_add.py:
+    GUI and logic for viewing, editing, and adding patient records.
+    Interact with data_manager.py to load, save, and encrypt/decrypt data.
+data_manager.py:
+    Crucial Module: Handles all file I/O and encryption/decryption.
+    Functions:
+        load_patient_data(patient_id): Loads and decrypts patient data from the file.
+        save_patient_data(patient_id, data): Encrypts and saves patient data to the file.
+        create_patient_file(patient_id, initial_data): Creates a new encrypted file for a new patient.
+patient.py:
+    Defines a Patient class to represent patient data.
+    Attributes: ID, name, date of birth, and other relevant information.
+utils.py (Optional):
+    For any helper functions that don't fit into other modules.
+patient_data/:
+    Directory where encrypted patient files (patient_ID.enc) are stored.
+    Important: This directory should have appropriate access permissions to protect patient data.
+
+GUI Framework Choice (Tkinter vs. PyQt):
+
+Tkinter:
+    Simpler to learn and use.
+    Good for basic GUI applications.
+    Might be sufficient for this project.
+PyQt:
+    More powerful and feature-rich.
+    Offers more flexibility in GUI design.
+    Consider if you need more advanced GUI elements or customization.
+
+
+Remember:
+
+Security: Implement robust encryption and key management in data_manager.py.
+Privacy: Adhere to relevant data protection regulations.
+Error Handling: Implement proper error handling throughout the application.
+This structure provides a good starting point. You can adjust it based on your specific needs and preferences as you develop the application.
+
+________________________________________________________________________
+
+main.py:
+
+import hashlib  # For password hashing (you can use bcrypt or Argon2 instead)
+from gui import login_window, patient_list 
+
+# (Import other GUI modules as you create them)
+
+def main():
+    """Main application entry point."""
+
+    # --- Configuration (You can move this to a separate config file) ---
+    ADMIN_PASSWORD_HASH = "your_hashed_admin_password"  # Hash the password securely!
+    DOCTOR_PASSWORD_HASH = "your_hashed_doctor_password"  # Hash the password securely!
+
+    # --- Login Handling ---
+    login_successful = False
+    while not login_successful:
+        login_type, entered_password = login_window.show_login_window()
+
+        if login_type == "admin":
+            if hashlib.sha256(entered_password.encode()).hexdigest() == ADMIN_PASSWORD_HASH:
+                login_successful = True
+                user_type = "admin"
+            else:
+                login_window.show_error_message("Incorrect password!")
+        elif login_type == "doctor":
+            if hashlib.sha256(entered_password.encode()).hexdigest() == DOCTOR_PASSWORD_HASH:
+                login_successful = True
+                user_type = "doctor"
+            else:
+                login_window.show_error_message("Incorrect password!")
+        else:
+            # Handle case where login window is closed
+            return  
+
+    # --- Main Application Loop ---
+    if login_successful:
+        # Open the patient list window after successful login
+        patient_list.show_patient_list_window(user_type)
+
+if __name__ == "__main__":
+    main()
+
+Explanation:
+
+Import Necessary Modules:
+
+Import hashlib for password hashing (replace with bcrypt or argon2 for stronger hashing).
+Import the necessary GUI modules (replace placeholders with actual module names).
+Configuration:
+
+Important: Replace the placeholder password hashes (ADMIN_PASSWORD_HASH, DOCTOR_PASSWORD_HASH) with securely hashed passwords. Do not store passwords in plain text!
+Use a strong hashing algorithm like bcrypt or Argon2.
+Example using bcrypt:
+
+import bcrypt
+hashed_password = bcrypt.hashpw(b"your_password", bcrypt.gensalt())
+
+
+Login Handling:
+
+login_successful Flag: Controls the login loop.
+Login Loop: Continuously prompts for login until successful.
+login_window.show_login_window(): (You need to implement this in gui/login_window.py)
+Displays the login window and returns the login type ("admin" or "doctor") and the entered password.
+Password Verification:
+Hashes the entered password using the same algorithm used for storing the password.
+Compares the hash with the stored hash.
+Error Handling: Displays an error message if the password is incorrect.
+Main Application Loop:
+
+patient_list.show_patient_list_window(): (You need to implement this in gui/patient_list.py)
+Displays the main patient list window if the login is successful.
+Key Points:
+
+Security:
+Password Hashing: Use a strong hashing algorithm (bcrypt, Argon2) and never store passwords in plain text.
+Input Validation: Implement input validation in your GUI modules to prevent vulnerabilities like SQL injection (even though you're not using a database, it's a good practice).
+GUI Implementation: You'll need to create the GUI modules (login_window.py, patient_list.py, etc.) and implement the functions called from main.py.
+Error Handling: Add more robust error handling (e.g., for file operations in data_manager.py).
+This main.py provides a basic structure. You'll need to build upon it by implementing the GUI, encryption, and other features in separate modules.
+
+_____________________________________________________________________________________________
+
+
+Okay, I can help you create the login window GUI with Tkinter, including your specific requirements:
+
+import tkinter as tk
+from tkinter import ttk
+from PIL import Image, ImageTk  # For handling images
+
+class LoginWindow:
+    def __init__(self, master):
+        self.master = master
+        master.title("Patient Records App")
+
+        # --- Background Image ---
+        try:
+            # Replace 'path/to/your/image.jpg' with the actual path
+            self.bg_image = ImageTk.PhotoImage(Image.open('path/to/your/image.jpg')) 
+            self.bg_label = tk.Label(master, image=self.bg_image)
+            self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        except FileNotFoundError:
+            print("Background image not found. Using default background.")
+
+        # --- Welcome Label ---
+        self.welcome_label = tk.Label(master, text="Welcome Jaqueline Simões", 
+                                      font=("Helvetica", 16))
+        self.welcome_label.pack(pady=(100, 20))  # Adjust padding as needed
+
+        # --- Password Entry ---
+        self.password_label = tk.Label(master, text="Password:", font=("Helvetica", 12))
+        self.password_label.pack()
+
+        self.password_entry = ttk.Entry(master, show="*")  # Use ttk.Entry for better styling
+        self.password_entry.pack(pady=10)
+
+        # --- Login Button ---
+        self.login_button = ttk.Button(master, text="Login", command=self.login)
+        self.login_button.pack()
+
+    def login(self):
+        # TODO: Implement password verification logic here
+        password = self.password_entry.get()
+        print("Entered Password:", password)
+        # ... (Add your password checking and application logic)
+
+root = tk.Tk()
+login_window = LoginWindow(root)
+root.mainloop()
+
+Explanation:
+
+Import Modules:
+
+Import tkinter as tk for the GUI.
+Import ttk from tkinter for themed widgets (better appearance).
+Import Image and ImageTk from PIL to handle the background image.
+LoginWindow Class:
+
+__init__ Method:
+
+Create the main window (master).
+Background Image:
+Load the image using Image.open() and ImageTk.PhotoImage().
+Create a label (self.bg_label) to display the image.
+Use place() to position the image (covers the entire window).
+Important: Replace "path/to/your/image.jpg" with the actual path to your image file.
+Welcome Label: Create and position the welcome label.
+Password Entry: Create a label and an entry field (masked with show="*") for the password.
+Login Button: Create a button that will trigger the login method when clicked.
+login Method:
+
+Placeholder: This method is currently a placeholder.
+You need to implement your password verification logic here:
+Get the password from self.password_entry.get().
+Hash the entered password using a secure hashing algorithm (bcrypt or Argon2).
+Compare the hashed password with the stored hash for the correct user.
+If the password is correct, proceed to the main application window.
+If incorrect, display an error message.
+Create and Run the Window:
+
+Create the main Tkinter window (root).
+Create an instance of the LoginWindow class.
+Run the Tkinter event loop using root.mainloop().
+To Use:
+
+Replace "path/to/your/image.jpg" with the correct path to your image file.
+Implement the password verification logic in the login method.
+Run the code to see your customized login window.
+This code provides a basic structure for your login window. You can customize it further by adding more styling, error handling, and your specific application logic.
+
+
+_____________________________________________________________________________________________
+
+Yes, it's definitely possible to compile your Python code (including Tkinter GUIs) into a standalone .exe file that can be run on Windows PCs without requiring the user to have Python installed.
+
+Here are the two most popular tools for creating .exe files from Python code:
+
+PyInstaller:
+
+Advantages:
+Widely used and well-documented.
+Relatively easy to use, especially for simpler projects.
+Good support for various Python libraries, including Tkinter.
+How to use it:
+Install: Open your command prompt or terminal and run: pip install pyinstaller
+Navigate to Project Directory: Use the cd command to go to the folder containing your main Python script.
+Run PyInstaller: Execute a command like: pyinstaller --onefile your_main_script.py
+Replace your_main_script.py with the actual name of your main Python file.
+The --onefile option creates a single executable file, which is generally more convenient for distribution.
+Executable Location: PyInstaller will create a dist folder in your project directory, and your .exe file will be inside.
+cx_Freeze:
+
+Advantages:
+Can be a good choice for more complex projects or if you need more fine-grained control over the build process.
+How to use it:
+cx_Freeze requires a bit more setup than PyInstaller. You'll need to create a setup script.
+Refer to the cx_Freeze documentation for detailed instructions: https://cx-freeze.readthedocs.io/en/latest/
+Important Considerations:
+
+Dependencies: If your project uses external libraries (other than Tkinter, which is usually included), you'll need to make sure those libraries are bundled with your .exe. Both PyInstaller and cx_Freeze have mechanisms for handling this.
+Icon: You can add a custom icon to your .exe file. PyInstaller and cx_Freeze have options for specifying an icon file.
+Testing: Always test your compiled .exe on a clean Windows machine (one without Python installed) to ensure it works correctly.
+Let me know if you have any other questions.
