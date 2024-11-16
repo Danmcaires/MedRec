@@ -119,9 +119,10 @@ class LoginWindow:
 
     def login(self):
         self.entered_password = self.password_entry.get()
-        if  # (Password is correct)
+        if self.entered_password:  # (Password is correct)
             self.fade_out_widgets()
         else:
+            return
 
     def show_login_window(self):
         self.master.mainloop()
